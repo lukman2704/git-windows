@@ -251,3 +251,4 @@ Release/
 /contrib/buildsystems/out
 /contrib/cgit-rs/target
 /contrib/cgit-rs/cgit-sys/target
+CMakeSettings.json
