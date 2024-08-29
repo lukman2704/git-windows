@@ -642,7 +642,7 @@ restore_untracked:
 		strvec_pushf(&cp.env, GIT_WORK_TREE_ENVIRONMENT"=%s",
 			     absolute_path(get_git_work_tree()));
 		strvec_pushf(&cp.env, GIT_DIR_ENVIRONMENT"=%s",
-			     absolute_path(get_git_dir()));
+			     absolute_path(repo_get_git_dir(the_repository)));
 		strvec_push(&cp.args, "status");
 		run_command(&cp);
 	}
