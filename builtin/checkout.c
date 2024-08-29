@@ -954,7 +954,7 @@ static void update_refs_for_switch(const struct checkout_opts *opts,
 
 			refname = mkpathdup("refs/heads/%s", opts->new_orphan_branch);
 			if (opts->new_branch_log &&
-			    !should_autocreate_reflog(refname)) {
+			    !should_autocreate_reflog(log_all_ref_updates, refname)) {
 				int ret;
 				struct strbuf err = STRBUF_INIT;
 
