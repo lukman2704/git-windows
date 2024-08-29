@@ -13,6 +13,7 @@
 #include "config.h"
 #include "fetch-pack.h"
 #include "remote.h"
+#include "object-store-ll.h"
 
 static struct {
 	enum bundle_list_heuristic heuristic;
