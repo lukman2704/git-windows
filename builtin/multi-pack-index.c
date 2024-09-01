@@ -63,7 +63,7 @@ static int parse_object_dir(const struct option *opt, const char *arg,
 	char **value = opt->value;
 	free(*value);
 	if (unset)
-		*value = xstrdup(get_object_directory());
+		*value = xstrdup(repo_get_object_directory(the_repository));
 	else
 		*value = real_pathdup(arg, 1);
 	return 0;
@@ -129,6 +129,8 @@ static int cmd_multi_pack_index_write(int argc, const char **argv,
 			MIDX_WRITE_BITMAP | MIDX_WRITE_REV_INDEX),
 		OPT_BIT(0, "progress", &opts.flags,
 			N_("force progress reporting"), MIDX_PROGRESS),
+		OPT_BIT(0, "incremental", &opts.flags,
+			N_("write a new incremental MIDX"), MIDX_WRITE_INCREMENTAL),
 		OPT_BOOL(0, "stdin-packs", &opts.stdin_packs,
 			 N_("write multi-pack index containing only given indexes")),
 		OPT_FILENAME(0, "refs-snapshot", &opts.refs_snapshot,

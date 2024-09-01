@@ -147,7 +147,7 @@ out:
 	return ret;
 }
 
-static int add_info_ref(const char *path, const struct object_id *oid,
+static int add_info_ref(const char *path, const char *referent UNUSED, const struct object_id *oid,
 			int flag UNUSED,
 			void *cb_data)
 {
@@ -342,7 +342,8 @@ static int write_pack_info_file(struct update_info_ctx *uic)
 
 static int update_info_packs(int force)
 {
-	char *infofile = mkpathdup("%s/info/packs", get_object_directory());
+	char *infofile = mkpathdup("%s/info/packs",
+				   repo_get_object_directory(the_repository));
 	int ret;
 
 	init_pack_info(infofile, force);

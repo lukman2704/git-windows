@@ -38,6 +38,8 @@
 #include "wildmatch.h"
 #include "ws.h"
 
+#define parse_range apply_parse_fragment_range
+
 struct gitdiff_data {
 	struct strbuf *root;
 	int linenr;
@@ -995,6 +997,7 @@ static int parse_mode_line(const char *line, int linenr, unsigned int *mode)
 	*mode = strtoul(line, &end, 8);
 	if (end == line || !isspace(*end))
 		return error(_("invalid mode on line %d: %s"), linenr, line);
+	*mode = canon_mode(*mode);
 	return 0;
 }
 
@@ -1441,8 +1444,8 @@ static int parse_num(const char *line, unsigned long *p)
 	return ptr - line;
 }
 
-static int parse_range(const char *line, int len, int offset, const char *expect,
-		       unsigned long *p1, unsigned long *p2)
+int apply_parse_fragment_range(const char *line, int len, int offset, const char *expect,
+			 unsigned long *p1, unsigned long *p2)
 {
 	int digits, ex;
 
@@ -4110,7 +4113,7 @@ static int read_apply_cache(struct apply_state *state)
 {
 	if (state->index_file)
 		return read_index_from(state->repo->index, state->index_file,
-				       get_git_dir());
+				       repo_get_git_dir(the_repository));
 	else
 		return repo_read_index(state->repo);
 }

@@ -2881,7 +2881,7 @@ static const char *get_ident_string(void)
 		return sb.buf;
 	if (uname(&uts) < 0)
 		die_errno(_("failed to get kernel name and information"));
-	strbuf_addf(&sb, "Location %s, system %s", get_git_work_tree(),
+	strbuf_addf(&sb, "Location %s, system %s", repo_get_work_tree(the_repository),
 		    uts.sysname);
 	return sb.buf;
 }

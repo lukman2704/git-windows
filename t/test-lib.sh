@@ -1562,8 +1562,16 @@ then
 		passes_sanitize_leak=t
 	fi
 
-	if test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check"
+	if test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check" ||
+	   test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check-failing"
 	then
+		if test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check-failing" &&
+		   test -n "$passes_sanitize_leak"
+		then
+			skip_all="skipping leak-free $this_test under GIT_TEST_PASSING_SANITIZE_LEAK=check-failing"
+			test_done
+		fi
+
 		sanitize_leak_check=t
 		if test -n "$invert_exit_code"
 		then
@@ -1601,6 +1609,7 @@ then
 	export LSAN_OPTIONS
 
 elif test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check" ||
+     test "$GIT_TEST_PASSING_SANITIZE_LEAK" = "check-failing" ||
      test_bool_env GIT_TEST_PASSING_SANITIZE_LEAK false
 then
 	BAIL_OUT_ENV_NEEDS_SANITIZE_LEAK "GIT_TEST_PASSING_SANITIZE_LEAK=true"
@@ -1610,7 +1619,7 @@ if test "${GIT_TEST_CHAIN_LINT:-1}" != 0 &&
    test "${GIT_TEST_EXT_CHAIN_LINT:-1}" != 0
 then
 	"$PERL_PATH" "$TEST_DIRECTORY/chainlint.pl" "$0" ||
-		BUG "lint error (see '?!...!? annotations above)"
+		BUG "lint error (see 'ERR' annotations above)"
 fi
 
 # Last-minute variable setup

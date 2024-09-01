@@ -214,7 +214,7 @@ static void changed_files(struct hashmap *result, const char *index_path,
 	struct child_process update_index = CHILD_PROCESS_INIT;
 	struct child_process diff_files = CHILD_PROCESS_INIT;
 	struct strbuf buf = STRBUF_INIT;
-	const char *git_dir = absolute_path(get_git_dir());
+	const char *git_dir = absolute_path(repo_get_git_dir(the_repository));
 	FILE *fp;
 
 	strvec_pushl(&update_index.args,
@@ -377,7 +377,7 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 	struct hashmap wt_modified, tmp_modified;
 	int indices_loaded = 0;
 
-	workdir = get_git_work_tree();
+	workdir = repo_get_work_tree(the_repository);
 
 	/* Setup temp directories */
 	tmp = getenv("TMPDIR");
@@ -737,8 +737,8 @@ int cmd_difftool(int argc, const char **argv, const char *prefix)
 
 	if (!no_index){
 		setup_work_tree();
-		setenv(GIT_DIR_ENVIRONMENT, absolute_path(get_git_dir()), 1);
-		setenv(GIT_WORK_TREE_ENVIRONMENT, absolute_path(get_git_work_tree()), 1);
+		setenv(GIT_DIR_ENVIRONMENT, absolute_path(repo_get_git_dir(the_repository)), 1);
+		setenv(GIT_WORK_TREE_ENVIRONMENT, absolute_path(repo_get_work_tree(the_repository)), 1);
 	} else if (dir_diff)
 		die(_("options '%s' and '%s' cannot be used together"), "--dir-diff", "--no-index");
 

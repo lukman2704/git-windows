@@ -2,6 +2,7 @@
 
 test_description='git cat-file'
 
+TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 test_cmdmode_usage () {
@@ -66,16 +67,18 @@ do
 	done
 done
 
-test_too_many_arguments () {
+test_unexpected_arg () {
+	unexpected=$1
+	shift
 	test_expect_code 129 "$@" 2>err &&
-	grep -E "^fatal: too many arguments$" err
+	grep -E "^fatal: unexpected argument: '$unexpected'" err
 }
 
 for opt in $short_modes $cw_modes
 do
 	args="one two three"
 	test_expect_success "usage: too many arguments: $opt $args" '
-		test_too_many_arguments git cat-file $opt $args
+		test_unexpected_arg two git cat-file $opt $args
 	'
 
 	for opt2 in --buffer --follow-symlinks
@@ -622,18 +625,31 @@ test_expect_success 'confirm that neither loose blob is a delta' '
 	test_cmp expect actual
 '
 
+test_expect_success 'setup delta base tests' '
+	foo="$(git rev-parse HEAD:foo)" &&
+	foo_plus="$(git rev-parse HEAD:foo-plus)" &&
+	git repack -ad
+'
+
 # To avoid relying too much on the current delta heuristics,
 # we will check only that one of the two objects is a delta
 # against the other, but not the order. We can do so by just
 # asking for the base of both, and checking whether either
 # oid appears in the output.
 test_expect_success '%(deltabase) reports packed delta bases' '
-	git repack -ad &&
 	git cat-file --batch-check="%(deltabase)" <blobs >actual &&
 	{
-		grep "$(git rev-parse HEAD:foo)" actual ||
-		grep "$(git rev-parse HEAD:foo-plus)" actual
+		grep "$foo" actual || grep "$foo_plus" actual
 	}
+'
+
+test_expect_success 'delta base direct cache use succeeds w/o asserting' '
+	commands="info $foo
+info $foo_plus
+contents $foo_plus
+contents $foo" &&
+	echo "$commands" >in &&
+	git cat-file --batch-command <in >out
 '
 
 test_expect_success 'setup bogus data' '

@@ -113,10 +113,10 @@ int cmd_count_objects(int argc, const char **argv, const char *prefix)
 		usage_with_options(count_objects_usage, opts);
 	if (verbose) {
 		report_garbage = real_report_garbage;
-		report_linked_checkout_garbage();
+		report_linked_checkout_garbage(the_repository);
 	}
 
-	for_each_loose_file_in_objdir(get_object_directory(),
+	for_each_loose_file_in_objdir(repo_get_object_directory(the_repository),
 				      count_loose, count_cruft, NULL, NULL);
 
 	if (verbose) {

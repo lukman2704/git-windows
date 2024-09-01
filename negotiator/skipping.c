@@ -75,7 +75,7 @@ static struct entry *rev_list_push(struct data *data, struct commit *commit, int
 	return entry;
 }
 
-static int clear_marks(const char *refname, const struct object_id *oid,
+static int clear_marks(const char *refname, const char *referent UNUSED, const struct object_id *oid,
 		       int flag UNUSED,
 		       void *cb_data UNUSED)
 {
@@ -247,8 +247,11 @@ static int ack(struct fetch_negotiator *n, struct commit *c)
 
 static void release(struct fetch_negotiator *n)
 {
-	clear_prio_queue(&((struct data *)n->data)->rev_list);
-	FREE_AND_NULL(n->data);
+	struct data *data = n->data;
+	for (int i = 0; i < data->rev_list.nr; i++)
+		free(data->rev_list.array[i].data);
+	clear_prio_queue(&data->rev_list);
+	FREE_AND_NULL(data);
 }
 
 void skipping_negotiator_init(struct fetch_negotiator *negotiator)

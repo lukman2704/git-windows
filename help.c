@@ -618,7 +618,7 @@ const char *help_unknown_cmd(const char *cmd)
 	memset(&other_cmds, 0, sizeof(other_cmds));
 	memset(&aliases, 0, sizeof(aliases));
 
-	read_early_config(git_unknown_cmd_config, NULL);
+	read_early_config(the_repository, git_unknown_cmd_config, NULL);
 
 	/*
 	 * Disable autocorrection prompt in a non-interactive session
@@ -804,7 +804,7 @@ struct similar_ref_cb {
 	struct string_list *similar_refs;
 };
 
-static int append_similar_ref(const char *refname,
+static int append_similar_ref(const char *refname, const char *referent UNUSED,
 			      const struct object_id *oid UNUSED,
 			      int flags UNUSED, void *cb_data)
 {

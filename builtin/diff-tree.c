@@ -8,6 +8,7 @@
 #include "read-cache-ll.h"
 #include "repository.h"
 #include "revision.h"
+#include "tmp-objdir.h"
 #include "tree.h"
 
 static struct rev_info log_tree_opt;
@@ -230,5 +231,5 @@ int cmd_diff_tree(int argc, const char **argv, const char *prefix)
 		diff_free(&opt->diffopt);
 	}
 
-	return diff_result_code(&opt->diffopt);
+	return diff_result_code(opt);
 }

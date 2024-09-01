@@ -419,6 +419,39 @@ enum scld_error safe_create_leading_directories_const(const char *path)
 	return result;
 }
 
+int odb_mkstemp(struct strbuf *temp_filename, const char *pattern)
+{
+	int fd;
+	/*
+	 * we let the umask do its job, don't try to be more
+	 * restrictive except to remove write permission.
+	 */
+	int mode = 0444;
+	git_path_buf(temp_filename, "objects/%s", pattern);
+	fd = git_mkstemp_mode(temp_filename->buf, mode);
+	if (0 <= fd)
+		return fd;
+
+	/* slow path */
+	/* some mkstemp implementations erase temp_filename on failure */
+	git_path_buf(temp_filename, "objects/%s", pattern);
+	safe_create_leading_directories(temp_filename->buf);
+	return xmkstemp_mode(temp_filename->buf, mode);
+}
+
+int odb_pack_keep(const char *name)
+{
+	int fd;
+
+	fd = open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
+	if (0 <= fd)
+		return fd;
+
+	/* slow path */
+	safe_create_leading_directories_const(name);
+	return open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
+}
+
 static void fill_loose_path(struct strbuf *buf, const struct object_id *oid)
 {
 	int i;
@@ -1492,6 +1525,13 @@ static int loose_object_info(struct repository *r,
 
 		if (!oi->contentp)
 			break;
+		if (oi->content_limit && *oi->typep == OBJ_BLOB &&
+				*oi->sizep > oi->content_limit) {
+			git_inflate_end(&stream);
+			oi->contentp = NULL;
+			goto cleanup;
+		}
+
 		*oi->contentp = unpack_loose_rest(&stream, hdr, *oi->sizep, oid);
 		if (*oi->contentp)
 			goto cleanup;
@@ -1580,6 +1620,11 @@ static int do_oid_object_info_extended(struct repository *r,
 			oidclr(oi->delta_base_oid, the_repository->hash_algo);
 		if (oi->type_name)
 			strbuf_addstr(oi->type_name, type_name(co->type));
+		/*
+		 * Currently `blame' is the only command which creates
+		 * OI_CACHED, and direct_cache is only used by `cat-file'.
+		 */
+		assert(!oi->direct_cache);
 		if (oi->contentp)
 			*oi->contentp = xmemdupz(co->buf, co->size);
 		oi->whence = OI_CACHED;
@@ -2053,7 +2098,7 @@ static int start_loose_object_common(struct strbuf *tmp_file,
 		else if (errno == EACCES)
 			return error(_("insufficient permission for adding "
 				       "an object to repository database %s"),
-				     get_object_directory());
+				     repo_get_object_directory(the_repository));
 		else
 			return error_errno(
 				_("unable to create temporary file"));
@@ -2228,7 +2273,7 @@ int stream_loose_object(struct input_stream *in_stream, size_t len,
 		prepare_loose_object_bulk_checkin();
 
 	/* Since oid is not determined, save tmp file to odb path. */
-	strbuf_addf(&filename, "%s/", get_object_directory());
+	strbuf_addf(&filename, "%s/", repo_get_object_directory(the_repository));
 	hdrlen = format_object_header(hdr, sizeof(hdr), OBJ_BLOB, len);
 
 	/*
@@ -2470,11 +2515,10 @@ int repo_has_object_file(struct repository *r,
  * give more context.
  */
 static int hash_format_check_report(struct fsck_options *opts UNUSED,
-				     const struct object_id *oid UNUSED,
-				     enum object_type object_type UNUSED,
-				     enum fsck_msg_type msg_type UNUSED,
-				     enum fsck_msg_id msg_id UNUSED,
-				     const char *message)
+				    void *fsck_report UNUSED,
+				    enum fsck_msg_type msg_type UNUSED,
+				    enum fsck_msg_id msg_id UNUSED,
+				    const char *message)
 {
 	error(_("object fails fsck: %s"), message);
 	return 1;
@@ -2954,6 +2998,7 @@ int read_loose_object(const char *path,
 	if (unpack_loose_header(&stream, map, mapsize, hdr, sizeof(hdr),
 				NULL) != ULHR_OK) {
 		error(_("unable to unpack header of %s"), path);
+		git_inflate_end(&stream);
 		goto out;
 	}
 

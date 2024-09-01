@@ -1472,7 +1472,7 @@ test_expect_success 'git notes copy diagnoses too many or too few arguments' '
 	test_must_fail git notes copy 2>error &&
 	test_grep "too few arguments" error &&
 	test_must_fail git notes copy one two three 2>error &&
-	test_grep "too many arguments" error
+	test_grep "unexpected argument: ${SQ}three${SQ}" error
 '
 
 test_expect_success 'git notes get-ref expands refs/heads/main to refs/notes/refs/heads/main' '
@@ -1555,6 +1555,16 @@ test_expect_success 'empty notes are displayed by git log' '
 	git notes add -C "$empty_blob" --allow-empty &&
 	git log -1 >actual &&
 	test_cmp expect actual
+'
+
+test_expect_success 'empty notes do not invoke the editor' '
+	test_commit 18th &&
+	GIT_EDITOR="false" git notes add -C "$empty_blob" --allow-empty &&
+	git notes remove HEAD &&
+	GIT_EDITOR="false" git notes add -m "" --allow-empty &&
+	git notes remove HEAD &&
+	GIT_EDITOR="false" git notes add -F /dev/null --allow-empty &&
+	git notes remove HEAD
 '
 
 test_done

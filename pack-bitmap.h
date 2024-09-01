@@ -60,6 +60,7 @@ struct bitmapped_pack {
 	uint32_t bitmap_pos;
 	uint32_t bitmap_nr;
 
+	struct multi_pack_index *from_midx; /* MIDX only */
 	uint32_t pack_int_id; /* MIDX only */
 };
 
@@ -110,6 +111,7 @@ struct bitmap_writer {
 
 	kh_oid_map_t *bitmaps;
 	struct packing_data *to_pack;
+	struct multi_pack_index *midx; /* if appending to a MIDX chain */
 
 	struct bitmapped_commit *selected;
 	unsigned int selected_nr, selected_alloc;
@@ -123,14 +125,14 @@ struct bitmap_writer {
 	unsigned char pack_checksum[GIT_MAX_RAWSZ];
 };
 
-void bitmap_writer_init(struct bitmap_writer *writer, struct repository *r);
+void bitmap_writer_init(struct bitmap_writer *writer, struct repository *r,
+			struct packing_data *pdata,
+			struct multi_pack_index *midx);
 void bitmap_writer_show_progress(struct bitmap_writer *writer, int show);
 void bitmap_writer_set_checksum(struct bitmap_writer *writer,
 				const unsigned char *sha1);
 void bitmap_writer_build_type_index(struct bitmap_writer *writer,
-				    struct packing_data *to_pack,
-				    struct pack_idx_entry **index,
-				    uint32_t index_nr);
+				    struct pack_idx_entry **index);
 int bitmap_writer_has_bitmapped_object_id(struct bitmap_writer *writer,
 					  const struct object_id *oid);
 void bitmap_writer_push_commit(struct bitmap_writer *writer,
@@ -147,11 +149,9 @@ struct ewah_bitmap *pseudo_merge_bitmap_for_commit(struct bitmap_index *bitmap_g
 void bitmap_writer_select_commits(struct bitmap_writer *writer,
 				  struct commit **indexed_commits,
 				  unsigned int indexed_commits_nr);
-int bitmap_writer_build(struct bitmap_writer *writer,
-			struct packing_data *to_pack);
+int bitmap_writer_build(struct bitmap_writer *writer);
 void bitmap_writer_finish(struct bitmap_writer *writer,
 			  struct pack_idx_entry **index,
-			  uint32_t index_nr,
 			  const char *filename,
 			  uint16_t options);
 void bitmap_writer_free(struct bitmap_writer *writer);
